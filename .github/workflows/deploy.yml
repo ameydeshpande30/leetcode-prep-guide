@@ -30,6 +30,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
           http_code="$(curl -sS -o "$response_file" -w '%{http_code}' \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
@@ -47,7 +48,7 @@ jobs:
             exit 1
           fi
 
-          build_type="$(python -c 'import json, sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("build_type", ""))' "$response_file")"
+          build_type="$(jq -r ' .build_type // "" ' "$response_file")"
 
           if [ "$build_type" != "workflow" ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
