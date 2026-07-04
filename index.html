@@ -997,18 +997,44 @@ function setQuestionStatus(id, status) {
 }
 
 async function fetchSolvedIdsForUsername(username) {
-  const endpoint = `https://alfa-leetcode-api.onrender.com/${encodeURIComponent(username)}/acSubmission?limit=500`;
-  const res = await fetch(endpoint, { method: "GET", mode: "cors" });
-  if (!res.ok) throw new Error("Sync request failed");
+  const base = `https://alfa-leetcode-api.onrender.com/${encodeURIComponent(username)}`;
+  const endpoints = [
+    `${base}/acSubmission?limit=2000`,
+    `${base}/submission?limit=2000`
+  ];
 
-  const data = await res.json();
-  const submissions = Array.isArray(data.submission) ? data.submission : [];
   const solved = new Set();
 
-  submissions.forEach(item => {
-    const slug = item && item.titleSlug;
-    if (slug && slugToId.has(slug)) solved.add(slugToId.get(slug));
-  });
+  const collectFromPayload = (payload, includeNonAccepted) => {
+    const buckets = [payload.submission, payload.acSubmission].filter(Array.isArray);
+    buckets.forEach(items => {
+      items.forEach(item => {
+        if (!item || typeof item !== "object") return;
+
+        const status = String(item.statusDisplay || item.status || "").toLowerCase();
+        if (!includeNonAccepted && status && status !== "accepted") return;
+
+        const slug = String(item.titleSlug || item.slug || "");
+        if (slug && slugToId.has(slug)) solved.add(slugToId.get(slug));
+      });
+    });
+  };
+
+  let fetchedAny = false;
+
+  for (let i = 0; i < endpoints.length; i += 1) {
+    const endpoint = endpoints[i];
+    const res = await fetch(endpoint, { method: "GET", mode: "cors" });
+    if (!res.ok) continue;
+
+    fetchedAny = true;
+    const data = await res.json();
+    collectFromPayload(data, i === 0);
+  }
+
+  if (!fetchedAny) {
+    throw new Error("Sync request failed");
+  }
 
   return solved;
 }
@@ -1045,7 +1071,7 @@ async function syncSolved(options = {}) {
     renderAll();
 
     if (!solvedIds.size) {
-      setSyncNote("Sync completed. No matching solved questions were found for this tracker.", "warn");
+      setSyncNote("Sync completed but no matching solved slugs were returned by the API.", "warn");
     } else {
       setSyncNote(`Sync completed: matched ${solvedIds.size}, updated ${updated}.`, "ok");
     }
