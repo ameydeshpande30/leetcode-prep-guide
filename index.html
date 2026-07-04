@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeetCode Topic Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b1020;
+    --bg-2:#0e1530;
+    --panel:rgba(255,255,255,.04);
+    --panel-solid:#141b33;
+    --muted:#94a0c4;
+    --text:#eef1fb;
+    --border:rgba(255,255,255,.09);
+    --border-strong:rgba(255,255,255,.16);
+    --accent:#6c8bff;
+    --accent-2:#8a6cff;
+    --accent-soft:rgba(108,139,255,.14);
+    --ok:#4ecb8d;
+    --warn:#f0b657;
+    --error:#ff6b6b;
+    --easy:#4ecb8d;
+    --medium:#f0b657;
+    --hard:#ff6b6b;
+    --radius:18px;
+    --radius-sm:12px;
+    --shadow:0 20px 50px rgba(2,6,23,.45);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(900px 500px at 12% -8%, rgba(108,139,255,.22), transparent 60%),
+      radial-gradient(800px 500px at 110% 10%, rgba(138,108,255,.20), transparent 55%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+  }
+
+  .page{
+    max-width:900px;
+    margin:0 auto;
+    padding:40px 18px 90px;
+  }
+
+  .app-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:22px;
+  }
+
+  .brand{display:flex; gap:14px; align-items:center;}
+  .brand-logo{
+    width:46px; height:46px; flex-shrink:0;
+    border-radius:14px;
+    background:linear-gradient(135deg, var(--accent), var(--accent-2));
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:20px; color:#fff;
+    box-shadow:0 10px 24px rgba(108,139,255,.4);
+  }
+
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    color:var(--accent);
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    margin-bottom:3px;
+  }
+
+  h1{margin:0; font-size:22px; line-height:1.15; letter-spacing:-.01em;}
+
+  .steps{display:flex; gap:6px; align-items:center;}
+  .step-dot{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--border-strong);
+    transition:all .2s ease;
+  }
+  .step-dot.active{
+    background:linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow:0 0 0 4px var(--accent-soft);
+    width:22px; border-radius:999px;
+  }
+
+  .muted{color:var(--muted);}
+
+  .view{display:none; animation:rise .35s ease;}
+  .view.active{display:block;}
+  @keyframes rise{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:26px;
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+  }
+
+  .stack{display:flex; flex-direction:column; gap:14px;}
+
+  .card h2{margin:0; font-size:19px; letter-spacing:-.01em;}
+  .step-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--accent);
+  }
+
+  .input{
+    width:100%;
+    border:1px solid var(--border-strong);
+    border-radius:var(--radius-sm);
+    padding:14px 16px;
+    font-size:15px;
+    color:var(--text);
+    background:rgba(0,0,0,.22);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .input::placeholder{color:var(--muted);}
+  .input:focus{border-color:var(--accent);}
+
+  .input:focus,
+  .btn:focus-visible,
+  .topic-btn:focus-visible,
+  .status-select:focus-visible,
+  .question-check:focus-visible{
+    outline:none;
+    box-shadow:0 0 0 3px var(--accent-soft);
+  }
+
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap;}
+
+  .btn{
+    border:1px solid var(--border-strong);
+    background:rgba(255,255,255,.05);
+    color:var(--text);
+    border-radius:var(--radius-sm);
+    padding:11px 16px;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .btn:hover{background:rgba(255,255,255,.1); border-color:var(--border-strong); transform:translateY(-1px);}
+  .btn.primary{
+    background:linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color:transparent; color:#fff;
+    box-shadow:0 10px 24px rgba(108,139,255,.35);
+  }
+  .btn.primary:hover{filter:brightness(1.06);}
+  .btn[disabled]{opacity:.45; cursor:not-allowed; transform:none; box-shadow:none;}
+
+  .topic-list{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+  .topic-btn{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,.03);
+    border-radius:var(--radius-sm);
+    padding:14px 16px;
+    text-align:left;
+    cursor:pointer;
+    color:var(--text);
+    font-weight:600;
+    font-size:14px;
+    transition:all .15s ease;
+  }
+  .topic-btn:hover{border-color:var(--border-strong); background:rgba(255,255,255,.06); transform:translateY(-1px);}
+  .topic-btn.active{
+    border-color:var(--accent);
+    background:var(--accent-soft);
+    box-shadow:0 0 0 1px var(--accent) inset;
+  }
+
+  .topic-meta{
+    font-size:11px;
+    color:var(--muted);
+    font-family:'JetBrains Mono', monospace;
+    font-weight:500;
+    flex-shrink:0;
+  }
+
+  .topbar{
+    display:flex;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:16px;
+    align-items:flex-start;
+  }
+  .topbar h2{margin:10px 0 6px; font-size:22px;}
+
+  .ring{position:relative; width:56px; height:56px; flex-shrink:0;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring-track{stroke:var(--border-strong);}
+  .ring-fill{stroke:url(#ringGrad); stroke-linecap:round; transition:stroke-dashoffset .4s ease;}
+  .ring-label{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600;
+  }
+
+  .topbar-left{display:flex; gap:14px; align-items:center;}
+
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    font-weight:600;
+    background:var(--accent-soft);
+    color:#c3d0ff;
+    border:1px solid rgba(108,139,255,.3);
+    border-radius:999px;
+    padding:5px 12px;
+  }
+
+  .sync-note{
+    margin:6px 0 16px;
+    font-size:13px;
+    color:var(--muted);
+    min-height:18px;
+  }
+
+  .questions{display:flex; flex-direction:column; gap:10px;}
+
+  .qcard{
+    border:1px solid var(--border);
+    background:rgba(255,255,255,.03);
+    border-radius:var(--radius-sm);
+    padding:14px 16px;
+    display:grid;
+    gap:12px;
+    grid-template-columns:auto 1fr auto;
+    align-items:center;
+    transition:all .15s ease;
+  }
+  .qcard:hover{border-color:var(--border-strong); background:rgba(255,255,255,.06);}
+  .qcard.done{
+    background:linear-gradient(90deg, rgba(78,203,141,.14), rgba(78,203,141,.04));
+    border-color:rgba(78,203,141,.35);
+  }
+
+  .q-title{font-weight:600; margin-bottom:6px; font-size:15px;}
+  .q-title a{color:var(--text); text-decoration:none;}
+  .q-title a:hover{color:var(--accent);}
+  .qcard.done .q-title a{color:#bff0d5;}
+
+  .pill{
+    display:inline-block;
+    font-size:10.5px;
+    font-weight:700;
+    border-radius:999px;
+    padding:3px 9px;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+  }
+
+  .pill.easy{background:rgba(78,203,141,.16); color:var(--easy);}
+  .pill.medium{background:rgba(240,182,87,.16); color:var(--medium);}
+  .pill.hard{background:rgba(255,107,107,.16); color:var(--hard);}
+
+  .status-select{
+    border:1px solid var(--border-strong);
+    border-radius:10px;
+    padding:9px 10px;
+    background:var(--panel-solid);
+    color:var(--text);
+    font-size:13px;
+    cursor:pointer;
+  }
+  .status-select option{background:var(--panel-solid); color:var(--text);}
+
+  .question-check{
+    width:22px;
+    height:22px;
+    accent-color:var(--ok);
+    cursor:pointer;
+  }
+
+  .advanced{
+    border-top:1px solid var(--border);
+    margin-top:18px;
+    padding-top:18px;
+    display:none;
+  }
+  .advanced.open{display:block;}
+
+  .error-box{
+    margin-top:16px;
+    border:1px solid rgba(255,107,107,.4);
+    color:#ffc9c9;
+    background:rgba(255,107,107,.1);
+    border-radius:var(--radius-sm);
+    padding:14px 16px;
+    font-size:13.5px;
+    display:none;
+  }
+
+  @media (max-width:700px){
+    .app-head{flex-direction:column;}
+    .topic-list{grid-template-columns:1fr;}
+    .qcard{grid-template-columns:auto 1fr;}
+    .status-select{grid-column:1 / -1; width:100%;}
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6c8bff"></stop>
+      <stop offset="100%" stop-color="#8a6cff"></stop>
+    </linearGradient>
+  </defs>
+</svg>
+<div class="page">
+  <div class="app-head">
+    <div class="brand">
+      <div class="brand-logo">LC</div>
+      <div>
+        <div class="eyebrow">LeetCode Tracker</div>
+        <h1>Practice, one topic at a time</h1>
+        <p class="muted" id="appSubtitle" style="margin:6px 0 0; font-size:13px;">Username &rarr; topic &rarr; questions.</p>
+      </div>
+    </div>
+    <div class="steps" id="stepIndicator" aria-hidden="true">
+      <span class="step-dot" data-step="1"></span>
+      <span class="step-dot" data-step="2"></span>
+      <span class="step-dot" data-step="3"></span>
+    </div>
+  </div>
+
+  <div id="viewUsername" class="view card">
+    <div class="stack">
+      <div class="step-label">Step 1 of 3</div>
+      <h2>Enter your LeetCode username</h2>
+      <p class="muted">We save it locally on this device and use it to auto-sync your solved questions.</p>
+      <input id="usernameInput" class="input" type="text" placeholder="for example: softwaremail30" autocomplete="off">
+      <div class="btn-row">
+        <button id="continueUsernameBtn" class="btn primary" type="button">Continue &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewTopic" class="view card">
+    <div class="stack">
+      <div class="step-label">Step 2 of 3</div>
+      <h2>Pick a topic to work on</h2>
+      <p class="muted">Choose one topic to focus on. You can change it anytime later.</p>
+      <input id="topicSearch" class="input" type="text" placeholder="Search topics...">
+      <div id="topicList" class="topic-list"></div>
+      <div class="btn-row">
+        <button id="backToUsernameBtn" class="btn" type="button">&larr; Back</button>
+        <button id="startPracticeBtn" class="btn primary" type="button" disabled>Start Practice &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewQuestions" class="view card">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="ring">
+          <svg width="56" height="56" viewBox="0 0 56 56">
+            <circle class="ring-track" cx="28" cy="28" r="24" fill="none" stroke-width="5"></circle>
+            <circle id="ringFill" class="ring-fill" cx="28" cy="28" r="24" fill="none" stroke-width="5"
+              stroke-dasharray="150.8" stroke-dashoffset="150.8"></circle>
+          </svg>
+          <div class="ring-label" id="ringLabel">0%</div>
+        </div>
+        <div>
+          <div class="badge" id="userBadge">@username</div>
+          <h2 id="topicTitle">Topic</h2>
+          <div class="muted" id="topicStats" style="font-size:13px;">0 solved</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button id="changeTopicBtn" class="btn" type="button">&larr; Change Topic</button>
+        <button id="syncNowBtn" class="btn primary" type="button">Sync Now</button>
+        <button id="toggleAdvancedBtn" class="btn" type="button">Advanced</button>
+      </div>
+    </div>
+
+    <div class="sync-note" id="syncNote"></div>
+    <div id="questionList" class="questions"></div>
+
+    <div id="advancedPanel" class="advanced">
+      <div class="btn-row">
+        <button id="exportBtn" class="btn" type="button">Export progress</button>
+        <button id="importBtn" class="btn" type="button">Import progress</button>
+        <input id="importFile" type="file" accept="application/json" style="display:none;">
+        <button id="resetTopicBtn" class="btn" type="button">Reset this topic</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="errorBox" class="error-box"></div>
+</div>
+
+<script>
+const STORAGE_KEY = "leetcode-topic-tracker-v2";
+const LEGACY_STORAGE_KEY = "leetcode-topic-tracker-v1";
+
+const STATUS = {
+  TODO: "not-started",
+  DOING: "in-progress",
+  DONE: "done"
+};
+
+const state = {
+  version: 2,
+  leetcodeUsername: "",
+  selectedTopic: "",
+  questions: {},
+  topics: {},
+  lastSyncAt: "",
+  syncSourceVersion: "alfa-leetcode-api/v1"
+};
+
+let questionBank = {};
+let topicNames = [];
+let slugToId = new Map();
+let searchableTopics = [];
+let pendingTopic = "";
+
+function showError(msg){
+  const box = document.getElementById("errorBox");
+  box.style.display = "block";
+  box.textContent = msg;
+}
+
+function hideError(){
+  const box = document.getElementById("errorBox");
+  box.style.display = "none";
+  box.textContent = "";
+}
+
+function normalizeUsername(value){
+  return (value || "").trim().replace(/^@+/, "");
+}
+
+function setSyncNote(text, tone){
+  const el = document.getElementById("syncNote");
+  el.textContent = text;
+  if (tone === "ok") el.style.color = "var(--ok)";
+  else if (tone === "warn") el.style.color = "var(--warn)";
+  else if (tone === "error") el.style.color = "var(--error)";
+  else el.style.color = "var(--muted)";
+}
+
+function extractSlug(link){
+  const marker = "/problems/";
+  const at = link.indexOf(marker);
+  if (at < 0) return "";
+  return link.slice(at + marker.length).replace(/\/+$/, "");
+}
+
+function getStatus(id){
+  return state.questions[id] || STATUS.TODO;
+}
+
+function isDone(id){
+  return getStatus(id) === STATUS.DONE;
+}
+
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadState(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        state.leetcodeUsername = parsed.leetcodeUsername || "";
+        state.selectedTopic = parsed.selectedTopic || "";
+        state.questions = parsed.questions || {};
+        state.topics = parsed.topics || {};
+        state.lastSyncAt = parsed.lastSyncAt || "";
+      }
+      return;
+    } catch (_) {
+      // Use defaults on malformed data.
+    }
+  }
+
+  const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (!legacyRaw) return;
+  try {
+    const legacy = JSON.parse(legacyRaw);
+    if (!legacy || typeof legacy !== "object") return;
+    state.leetcodeUsername = legacy.leetcodeUsername || "";
+    state.questions = legacy.questions || {};
+    state.topics = legacy.topics || {};
+    saveState();
+  } catch (_) {
+    // Ignore malformed legacy data.
+  }
+}
+
+function topicStats(topicName){
+  const questions = questionBank[topicName] || [];
+  const done = questions.filter(q => isDone(q.id)).length;
+  return { done, total: questions.length };
+}
+
+function updateDerivedTopicStatuses(){
+  topicNames.forEach(topic => {
+    const { done, total } = topicStats(topic);
+    if (done === 0) state.topics[topic] = STATUS.TODO;
+    else if (done === total) state.topics[topic] = STATUS.DONE;
+    else state.topics[topic] = STATUS.DOING;
+  });
+}
+
+function showView(name){
+  ["viewUsername", "viewTopic", "viewQuestions"].forEach(id => {
+    document.getElementById(id).classList.toggle("active", id === name);
+  });
+  const stepByView = { viewUsername: 1, viewTopic: 2, viewQuestions: 3 };
+  const current = stepByView[name] || 1;
+  document.querySelectorAll("#stepIndicator .step-dot").forEach(dot => {
+    dot.classList.toggle("active", Number(dot.dataset.step) === current);
+  });
+}
+
+function updateProgressRing(done, total){
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const circumference = 150.8;
+  const fill = document.getElementById("ringFill");
+  const label = document.getElementById("ringLabel");
+  if (fill) fill.style.strokeDashoffset = String(circumference - (circumference * pct / 100));
+  if (label) label.textContent = pct + "%";
+}
+
+function renderTopicList(filterText){
+  const term = (filterText || "").trim().toLowerCase();
+  const list = document.getElementById("topicList");
+  list.innerHTML = "";
+
+  const visible = searchableTopics.filter(topic => topic.toLowerCase().includes(term));
+  if (!visible.length) {
+    const empty = document.createElement("div");
+    empty.className = "muted";
+    empty.textContent = "No topics found.";
+    list.appendChild(empty);
+    return;
+  }
+
+  visible.forEach(topic => {
+    const { done, total } = topicStats(topic);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "topic-btn" + (pendingTopic === topic ? " active" : "");
+    btn.innerHTML = `
+      <span>${topic}</span>
+      <span class="topic-meta">${done}/${total} solved</span>
+    `;
+    btn.addEventListener("click", () => {
+      pendingTopic = topic;
+      document.getElementById("startPracticeBtn").disabled = false;
+      renderTopicList(document.getElementById("topicSearch").value);
+    });
+    list.appendChild(btn);
+  });
+}
+
+function openTopicStep(){
+  showView("viewTopic");
+  pendingTopic = state.selectedTopic || "";
+  document.getElementById("startPracticeBtn").disabled = !pendingTopic;
+  document.getElementById("topicSearch").value = "";
+  renderTopicList("");
+  hideError();
+}
+
+function renderQuestionList(){
+  const topic = state.selectedTopic;
+  const list = document.getElementById("questionList");
+  list.innerHTML = "";
+
+  const questions = questionBank[topic] || [];
+  const { done, total } = topicStats(topic);
+
+  document.getElementById("userBadge").textContent = "@" + state.leetcodeUsername;
+  document.getElementById("topicTitle").textContent = topic;
+
+  let subtitle = `${done} of ${total} solved`;
+  if (state.lastSyncAt) {
+    const dt = new Date(state.lastSyncAt);
+    if (!Number.isNaN(dt.getTime())) {
+      subtitle += ` • Last sync ${dt.toLocaleString()}`;
+    }
+  }
+  document.getElementById("topicStats").textContent = subtitle;
+  updateProgressRing(done, total);
+
+  questions.forEach(q => {
+    const status = getStatus(q.id);
+    const doneClass = status === STATUS.DONE ? " done" : "";
+    const difficultyClass = String(q.difficulty || "").toLowerCase();
+
+    const row = document.createElement("div");
+    row.className = "qcard" + doneClass;
+    row.innerHTML = `
+      <input class="question-check" type="checkbox" ${status === STATUS.DONE ? "checked" : ""} aria-label="Mark ${q.title} done">
+      <div>
+        <div class="q-title"><a href="${q.link}" target="_blank" rel="noopener">${q.title}</a></div>
+        <span class="pill ${difficultyClass}">${q.difficulty}</span>
+      </div>
+      <select class="status-select" aria-label="Status for ${q.title}">
+        <option value="${STATUS.TODO}" ${status === STATUS.TODO ? "selected" : ""}>Todo</option>
+        <option value="${STATUS.DOING}" ${status === STATUS.DOING ? "selected" : ""}>In Progress</option>
+        <option value="${STATUS.DONE}" ${status === STATUS.DONE ? "selected" : ""}>Done</option>
+      </select>
+    `;
+
+    const check = row.querySelector(".question-check");
+    const select = row.querySelector(".status-select");
+
+    check.addEventListener("change", () => {
+      setQuestionStatus(q.id, check.checked ? STATUS.DONE : STATUS.TODO);
+      renderQuestionList();
+    });
+
+    select.addEventListener("change", () => {
+      setQuestionStatus(q.id, select.value);
+      renderQuestionList();
+    });
+
+    list.appendChild(row);
+  });
+}
+
+function setQuestionStatus(id, status){
+  state.questions[id] = status;
+  updateDerivedTopicStatuses();
+  saveState();
+}
+
+function exportProgress(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "leetcode-progress.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importProgressFile(file){
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      if (!parsed || typeof parsed !== "object") throw new Error("Invalid JSON");
+
+      state.leetcodeUsername = normalizeUsername(parsed.leetcodeUsername || state.leetcodeUsername);
+      state.selectedTopic = parsed.selectedTopic || state.selectedTopic;
+      state.questions = parsed.questions || {};
+      state.topics = parsed.topics || {};
+      state.lastSyncAt = parsed.lastSyncAt || state.lastSyncAt;
+
+      updateDerivedTopicStatuses();
+      saveState();
+      setSyncNote("Imported progress successfully.", "ok");
+
+      if (!state.leetcodeUsername) {
+        showView("viewUsername");
+      } else if (!state.selectedTopic) {
+        openTopicStep();
+      } else {
+        openQuestionsStep({ doAutoSync: true });
+      }
+    } catch (_) {
+      showError("The selected file is not a valid progress JSON.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function resetCurrentTopic(){
+  const topic = state.selectedTopic;
+  if (!topic) return;
+  (questionBank[topic] || []).forEach(q => {
+    delete state.questions[q.id];
+  });
+  updateDerivedTopicStatuses();
+  saveState();
+  renderQuestionList();
+  setSyncNote("Reset statuses for the current topic.", "warn");
+}
+
+async function fetchSolvedIdsForUsername(username){
+  const endpoint = `https://alfa-leetcode-api.onrender.com/${encodeURIComponent(username)}/acSubmission?limit=500`;
+  const res = await fetch(endpoint, { method: "GET", mode: "cors" });
+  if (!res.ok) throw new Error("Sync request failed");
+
+  const data = await res.json();
+  const submissions = Array.isArray(data.submission) ? data.submission : [];
+  const solved = new Set();
+
+  submissions.forEach(item => {
+    const slug = item && item.titleSlug;
+    if (slug && slugToId.has(slug)) solved.add(slugToId.get(slug));
+  });
+
+  return solved;
+}
+
+async function syncSolved({ auto = false } = {}){
+  const username = state.leetcodeUsername;
+  if (!username) {
+    setSyncNote("Please enter username first.", "warn");
+    return;
+  }
+
+  const syncBtn = document.getElementById("syncNowBtn");
+  const oldLabel = syncBtn.textContent;
+  syncBtn.disabled = true;
+  syncBtn.textContent = "Syncing...";
+
+  setSyncNote(`Syncing solved questions for @${username}...`, "");
+
+  try {
+    const solvedIds = await fetchSolvedIdsForUsername(username);
+    let updated = 0;
+    solvedIds.forEach(id => {
+      if (state.questions[id] !== STATUS.DONE) {
+        state.questions[id] = STATUS.DONE;
+        updated += 1;
+      }
+    });
+
+    state.lastSyncAt = new Date().toISOString();
+    updateDerivedTopicStatuses();
+    saveState();
+    renderQuestionList();
+
+    if (!solvedIds.size) {
+      setSyncNote("Sync completed. No matching solved questions were found for this tracker.", "warn");
+    } else {
+      setSyncNote(`Sync completed: matched ${solvedIds.size}, updated ${updated}.`, "ok");
+    }
+  } catch (_) {
+    setSyncNote(
+      auto
+        ? "Auto sync failed on reload. You can continue and tap Sync Now anytime."
+        : "Sync failed. Please verify username and try again.",
+      "error"
+    );
+  } finally {
+    syncBtn.disabled = false;
+    syncBtn.textContent = oldLabel;
+  }
+}
+
+async function openQuestionsStep({ doAutoSync } = { doAutoSync: true }){
+  showView("viewQuestions");
+  hideError();
+  renderQuestionList();
+
+  if (doAutoSync) {
+    await syncSolved({ auto: true });
+  }
+}
+
+function buildQuestionBank(raw){
+  if (!raw || typeof raw !== "object" || !Array.isArray(raw.topics)) {
+    throw new Error("Invalid question bank format");
+  }
+
+  const bank = {};
+  const names = [];
+  const slugMap = new Map();
+
+  raw.topics.forEach(topic => {
+    if (!topic || typeof topic !== "object") return;
+    const name = (topic.name || "").trim();
+    const questions = Array.isArray(topic.questions) ? topic.questions : [];
+    if (!name || !questions.length) return;
+
+    const normalizedQuestions = questions
+      .filter(q => q && typeof q === "object")
+      .map(q => ({
+        id: Number(q.id),
+        title: String(q.title || "Untitled"),
+        difficulty: String(q.difficulty || "Medium"),
+        link: String(q.link || "#"),
+        slug: String(q.slug || "")
+      }))
+      .filter(q => Number.isFinite(q.id));
+
+    if (!normalizedQuestions.length) return;
+
+    bank[name] = normalizedQuestions;
+    names.push(name);
+
+    normalizedQuestions.forEach(q => {
+      const slug = q.slug || extractSlug(q.link);
+      if (slug) slugMap.set(slug, q.id);
+    });
+  });
+
+  if (!names.length) throw new Error("No topics available in question bank");
+
+  questionBank = bank;
+  topicNames = names;
+  slugToId = slugMap;
+  searchableTopics = [...topicNames];
+}
+
+async function loadQuestionBank(){
+  const res = await fetch("./questions.json", { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error("Could not load questions.json");
+  }
+  const data = await res.json();
+  buildQuestionBank(data);
+}
+
+function bindEvents(){
+  document.getElementById("continueUsernameBtn").addEventListener("click", () => {
+    const username = normalizeUsername(document.getElementById("usernameInput").value);
+    if (!username) {
+      showError("Please enter a valid LeetCode username.");
+      return;
+    }
+    hideError();
+    state.leetcodeUsername = username;
+    saveState();
+    openTopicStep();
+  });
+
+  document.getElementById("startPracticeBtn").addEventListener("click", async () => {
+    if (!pendingTopic) {
+      showError("Please choose a topic first.");
+      return;
+    }
+    state.selectedTopic = pendingTopic;
+    saveState();
+    await openQuestionsStep({ doAutoSync: true });
+  });
+
+  document.getElementById("backToUsernameBtn").addEventListener("click", () => {
+    hideError();
+    showView("viewUsername");
+    document.getElementById("usernameInput").value = state.leetcodeUsername;
+    document.getElementById("usernameInput").focus();
+  });
+
+  document.getElementById("topicSearch").addEventListener("input", e => {
+    renderTopicList(e.target.value);
+  });
+
+  document.getElementById("changeTopicBtn").addEventListener("click", () => {
+    openTopicStep();
+  });
+
+  document.getElementById("syncNowBtn").addEventListener("click", async () => {
+    await syncSolved({ auto: false });
+  });
+
+  document.getElementById("toggleAdvancedBtn").addEventListener("click", () => {
+    document.getElementById("advancedPanel").classList.toggle("open");
+  });
+
+  document.getElementById("exportBtn").addEventListener("click", exportProgress);
+
+  document.getElementById("importBtn").addEventListener("click", () => {
+    document.getElementById("importFile").click();
+  });
+
+  document.getElementById("importFile").addEventListener("change", e => {
+    importProgressFile(e.target.files[0]);
+    e.target.value = "";
+  });
+
+  document.getElementById("resetTopicBtn").addEventListener("click", () => {
+    resetCurrentTopic();
+  });
+}
+
+async function start(){
+  bindEvents();
+  loadState();
+
+  if (state.leetcodeUsername) {
+    document.getElementById("usernameInput").value = state.leetcodeUsername;
+  }
+
+  try {
+    await loadQuestionBank();
+  } catch (_) {
+    showError("Unable to load question data from questions.json. Start this page from a local web server and ensure the file exists.");
+    return;
+  }
+
+  updateDerivedTopicStatuses();
+  saveState();
+
+  if (!state.leetcodeUsername) {
+    showView("viewUsername");
+    return;
+  }
+
+  if (!state.selectedTopic || !questionBank[state.selectedTopic]) {
+    state.selectedTopic = "";
+    saveState();
+    openTopicStep();
+    return;
+  }
+
+  await openQuestionsStep({ doAutoSync: true });
+}
+
+start();
+</script>
+</body>
+</html>
